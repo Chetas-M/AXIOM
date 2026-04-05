@@ -1,0 +1,8 @@
+torch
+xgboost
+prophet
+qdrant-client
+fastapi
+uvicorn
+llama-cpp-python
+-e ../shared
