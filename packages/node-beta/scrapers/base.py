@@ -13,8 +13,8 @@ logging.basicConfig(
 pw = urllib.parse.quote_plus(os.environ.get("POSTGRES_PASSWORD", ""))
 user = os.environ.get("POSTGRES_USER", "axiom")
 db = os.environ.get("POSTGRES_DB", "axiom")
-    host = os.environ.get("POSTGRES_HOST", "localhost")
-    port = os.environ.get("POSTGRES_PORT", "5432")
+host = os.environ.get("POSTGRES_HOST", "localhost")
+port = os.environ.get("POSTGRES_PORT", "5432")
 DATABASE_URL = os.environ.get("DATABASE_URL", f"postgresql://{user}:{pw}@{host}:{port}/{db}")
 
 @contextmanager
