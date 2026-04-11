@@ -17,9 +17,13 @@ if config.config_file_name is not None:
 import os
 import urllib.parse
 password = urllib.parse.quote_plus(os.environ.get('POSTGRES_PASSWORD', 'changeme')).replace('%', '%%')
+host = os.environ.get("POSTGRES_HOST", "localhost")
+port = os.environ.get("POSTGRES_PORT", "5432")
+user = os.environ.get("POSTGRES_USER", "axiom")
+db = os.environ.get("POSTGRES_DB", "axiom")
 config.set_main_option(
     "sqlalchemy.url",
-    f"postgresql://axiom:{password}@{host}:{port}/axiom"
+    f"postgresql://{user}:{password}@{host}:{port}/{db}"
 )
 
 

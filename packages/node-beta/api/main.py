@@ -4,7 +4,7 @@ from api.routers import ohlcv, news, signals
 
 app = FastAPI(
     title="AXIOM Internal API",
-    description="Financial intelligence data layer for node-alpha",
+    description="Financial intelligence data layer for node-beta",
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",

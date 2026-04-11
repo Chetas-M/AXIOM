@@ -23,7 +23,8 @@ def check_postgres():
         ["docker", "inspect", "-f", "{{.State.Running}}", "axiom-postgres"],
         capture_output=True, text=True
     )
-    assert result.stdout.strip() == "true", "Container not running"
+    if result.stdout.strip() != "true":
+        raise RuntimeError("Container not running")
 
 @check("axiom-qdrant (Docker)")
 def check_qdrant():
@@ -31,13 +32,15 @@ def check_qdrant():
         ["docker", "inspect", "-f", "{{.State.Running}}", "axiom-qdrant"],
         capture_output=True, text=True
     )
-    assert result.stdout.strip() == "true", "Container not running"
+    if result.stdout.strip() != "true":
+        raise RuntimeError("Container not running")
 
 @check("axiom-api (FastAPI)")
 def check_api():
     api_url = os.environ.get("API_HEALTH_URL", "http://localhost:8000/health")
     r = httpx.get(api_url, timeout=5)
-    assert r.status_code == 200, f"HTTP {r.status_code}"
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code}")
 
 @check("axiom-scheduler (systemd)")
 def check_scheduler():
@@ -45,7 +48,8 @@ def check_scheduler():
         ["systemctl", "is-active", "axiom-scheduler"],
         capture_output=True, text=True
     )
-    assert result.stdout.strip() == "active", "Scheduler not active"
+    if result.stdout.strip() != "active":
+        raise RuntimeError("Scheduler not active")
 
 if __name__ == "__main__":
     failed = []

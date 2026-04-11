@@ -20,7 +20,13 @@ def send_telegram(message: str):
             "text": message,
             "parse_mode": "Markdown",
         }, timeout=10)
+        r.raise_for_status()
         log.debug(f"Telegram response status: {r.status_code}")
+    except httpx.HTTPStatusError as e:
+        response = e.response
+        log.error(
+            f"Telegram alert failed with status {response.status_code}: {response.text}"
+        )
     except Exception as e:
         log.error(f"Telegram alert failed: {e}")
 

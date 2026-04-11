@@ -21,8 +21,10 @@ echo "Old backups pruned (>${RETAIN_DAYS} days)"
 TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
 TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
 
-if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ "$TELEGRAM_BOT_TOKEN" != "your_token_here" ]; then
+if [ -n "$TELEGRAM_BOT_TOKEN" ] && \
+   [ "$TELEGRAM_BOT_TOKEN" != "your_token_here" ] && \
+   [ -n "$TELEGRAM_CHAT_ID" ]; then
     curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
       -d chat_id="${TELEGRAM_CHAT_ID}" \
-      -d text="?? AXIOM backup complete: ${FILENAME}" > /dev/null
+      -d text="[AXIOM] Backup complete: ${FILENAME}" > /dev/null
 fi
