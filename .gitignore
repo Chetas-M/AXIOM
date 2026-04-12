@@ -1,8 +1,4 @@
-*.pkl
-*.pt
-*.gguf
+﻿# Root
 .env*
+*.log
 __pycache__/
-data/raw/
-data/model-artifacts/
-*.egg-info

@@ -6,3 +6,12 @@ alembic
 apscheduler
 qdrant-client
 -e ../shared
+yfinance>=0.2.43
+pandas
+feedparser
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+sqlalchemy[asyncio]==2.0.36
+asyncpg
+python-dotenv
+httpx
