@@ -6,4 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "axiom-shared"
 version = "0.1.0"
 description = "Shared types and utilities for Axiom"
+
+[tool.setuptools]
 packages = ["axiom_shared"]
