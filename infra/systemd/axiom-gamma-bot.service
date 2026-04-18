@@ -7,8 +7,8 @@ User=chetas
 WorkingDirectory=/home/chetas/axiom/packages/node-gamma
 
 # Set your actual Telegram bot token and chat ID
-Environment="TELEGRAM_BOT_TOKEN=8794674509:AAFpsjtZUDnVmzQVb73UNddFdWQRdf7JXdA"
-Environment="TELEGRAM_CHAT_ID=6620697437"
+Environment="TELEGRAM_BOT_TOKEN=''
+Environment="TELEGRAM_CHAT_ID=''
 
 # Ensure Python can find the adjacent packages if needed
 Environment="PYTHONPATH=/home/chetas/axiom/packages"
