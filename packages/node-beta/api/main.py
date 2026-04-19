@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api.routers import ohlcv, news, signals
+from api.routers import ohlcv, news, signals, rag
 
 app = FastAPI(
     title="AXIOM Internal API",
@@ -20,6 +20,7 @@ app.add_middleware(
 app.include_router(ohlcv.router)
 app.include_router(news.router)
 app.include_router(signals.router)
+app.include_router(rag.router)
 
 @app.get("/health")
 async def health():

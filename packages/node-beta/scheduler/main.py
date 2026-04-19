@@ -51,6 +51,8 @@ def run_all_scrapers():
     except Exception as e:
         log.error(f"Scraper failed: {e}")
 
+from scrapers.rag_pipeline import run_nse_scrape_and_embed, run_rss_scrape_and_embed
+
 def main():
     scheduler = BlockingScheduler(timezone="Asia/Kolkata")
     
@@ -60,6 +62,22 @@ def main():
         trigger=CronTrigger(day_of_week="mon-fri", hour=15, minute=35),
         id="market_close_scrape",
         max_instances=1
+    )
+    
+    # Job 1 — NSE announcements
+    scheduler.add_job(
+        run_nse_scrape_and_embed,
+        CronTrigger(hour="8-16", minute="0,30", day_of_week="mon-fri"),
+        id="rag_nse",
+        replace_existing=True
+    )
+    
+    # Job 2 — RSS feeds
+    scheduler.add_job(
+        run_rss_scrape_and_embed,
+        CronTrigger(hour="7-16", minute="15,45", day_of_week="mon-fri"),
+        id="rag_rss",
+        replace_existing=True
     )
     
     # pre-market: 08:45 IST
