@@ -5,4 +5,6 @@ qdrant-client
 fastapi
 uvicorn
 llama-cpp-python
+celery
+redis
 -e ../shared

@@ -10,6 +10,7 @@ import requests
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scrapers"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "shared"))
 
 from utils.alerts import alert_success, alert_failure
 import nse_scraper
@@ -22,22 +23,32 @@ logging.basicConfig(
 log = logging.getLogger("axiom.scheduler")
 
 def run_premarket_pipeline():
-    log.info("Running premarket pipeline (T-1 signals, etc.)")
+    log.info("Running premarket pipeline (Enqueuing Morning Brief)")
+    try:
+        from axiom_shared.tasks import BriefTask
+        from celery import Celery
+        from axiom_shared.config import REDIS_URL
+        celery_app = Celery("axiom", broker=REDIS_URL, backend=REDIS_URL)
+
+        task = BriefTask(date=datetime.now().strftime("%Y-%m-%d"), tickers=["RELIANCE", "TCS", "INFY"], run_id=f"brief_{datetime.now().timestamp()}")
+        celery_app.send_task("worker.morning_brief", kwargs={"payload": task.model_dump()})
+        log.info(f"Enqueued brief task {task.run_id}")
+    except Exception as e:
+        log.error(f"Failed to enqueue brief task: {e}")
 
 def run_intraday_signal_check():
-    log.info("Running intraday signal check...")
-    # call node-alpha/infer
+    log.info("Enqueuing intraday signal check...")
     try:
-        req = {
-            "tickers": ["RELIANCE", "TCS"],
-            "timeframe": "15m",
-            "models": ["xgboost", "lstm", "prophet"]
-        }
-        res = requests.post("http://node-alpha:8001/infer", json=req)
-        # TODO: Execute paper trading logic
-        log.info(res.json())
+        from axiom_shared.tasks import InferTask
+        from celery import Celery
+        from axiom_shared.config import REDIS_URL
+        celery_app = Celery("axiom", broker=REDIS_URL, backend=REDIS_URL)
+
+        task = InferTask(date=datetime.now().strftime("%Y-%m-%d"), tickers=["RELIANCE", "TCS"], run_id=f"infer_{datetime.now().timestamp()}")
+        celery_app.send_task("worker.infer_signals", kwargs={"payload": task.model_dump()})
+        log.info(f"Enqueued signal task {task.run_id}")
     except Exception as e:
-        log.error(f"Failed to call alpha: {e}")
+        log.error(f"Failed to enqueue infer task: {e}")
 
 def run_postmarket_summary():
     log.info("Running post-market summary and metrics update")

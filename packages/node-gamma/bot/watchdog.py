@@ -28,6 +28,9 @@ def check_postgres():
 
 @check("axiom-qdrant (HTTP - Node Alpha)")
 def check_qdrant():
+    vector_backend = os.environ.get("VECTOR_BACKEND", "qdrant")
+    if vector_backend == "pgvector":
+        return # Skip if using pgvector
     qdrant_url = os.environ.get("QDRANT_HEALTH_URL", "http://node-alpha:6333/")
     r = httpx.get(qdrant_url, timeout=5)
     if r.status_code != 200:
