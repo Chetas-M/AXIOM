@@ -31,12 +31,18 @@ def upgrade() -> None:
     # 3. Create indexes
     op.create_index('ix_news_articles_ticker', 'news_articles', ['ticker'])
     op.create_index('ix_news_articles_published_at', 'news_articles', ['published_at'])
-    op.execute("CREATE INDEX ix_news_articles_embedding ON news_articles USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);")
+    with op.get_context().autocommit_block():
+        op.execute(
+            "CREATE INDEX CONCURRENTLY ix_news_articles_embedding "
+            "ON news_articles USING ivfflat (embedding vector_cosine_ops) "
+            "WITH (lists = 100);"
+        )
 
 
 def downgrade() -> None:
     # 1. Drop indexes
-    op.execute("DROP INDEX IF EXISTS ix_news_articles_embedding;")
+    with op.get_context().autocommit_block():
+        op.execute("DROP INDEX CONCURRENTLY IF EXISTS ix_news_articles_embedding;")
     op.drop_index('ix_news_articles_published_at', table_name='news_articles')
     op.drop_index('ix_news_articles_ticker', table_name='news_articles')
 
