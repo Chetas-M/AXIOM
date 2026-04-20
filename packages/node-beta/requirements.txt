@@ -15,3 +15,5 @@ sqlalchemy[asyncio]==2.0.36
 asyncpg
 python-dotenv
 httpx
+celery
+redis
