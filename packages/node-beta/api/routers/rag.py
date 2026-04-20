@@ -44,9 +44,9 @@ async def get_context_for_ticker_pgvector(ticker: str, db: AsyncSession, top_k: 
     # Use pgvector cosine distance `<=>` operator (or `<->` for L2, but we configured cosine index with vector_cosine_ops)
     stmt = (
         select(NewsArticle)
-        .filter(
-            NewsArticle.embedding != None,
-            or_(NewsArticle.ticker == ticker, NewsArticle.ticker == "GENERAL", NewsArticle.ticker == None),
+        .where(
+            NewsArticle.embedding.is_not(None),
+            or_(NewsArticle.ticker == ticker, NewsArticle.ticker == "GENERAL", NewsArticle.ticker.is_(None)),
             NewsArticle.published_at >= cutoff_timestamp
         )
         .order_by(NewsArticle.embedding.cosine_distance(vec))
