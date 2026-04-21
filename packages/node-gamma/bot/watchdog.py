@@ -20,6 +20,7 @@ engine = create_engine(POSTGRES_DSN)
 SessionLocal = sessionmaker(bind=engine)
 
 def check_postgres() -> tuple[bool, str]:
+    session = None
     try:
         session = SessionLocal()
         session.execute(text("SELECT 1"))
@@ -27,10 +28,12 @@ def check_postgres() -> tuple[bool, str]:
         res = session.execute(text("SELECT version_num FROM alembic_version")).fetchone()
         if not res:
             return False, "Postgres is up, but Alembic migrations table is empty"
-        session.close()
         return True, "OK"
     except Exception as e:
         return False, str(e)
+    finally:
+        if session is not None:
+            session.close()
 
 def check_redis() -> tuple[bool, str]:
     import redis
@@ -54,10 +57,10 @@ def check_beta_api() -> tuple[bool, str]:
 
 def check_scraper_activity() -> tuple[bool, str]:
     from storage.models import NewsArticle
+    session = None
     try:
         session = SessionLocal()
         latest = session.query(NewsArticle).order_by(NewsArticle.created_at.desc()).first()
-        session.close()
         if not latest:
             return False, "No articles found in DB"
         
@@ -68,6 +71,9 @@ def check_scraper_activity() -> tuple[bool, str]:
         return True, "OK"
     except Exception as e:
         return False, str(e)
+    finally:
+        if session is not None:
+            session.close()
 
 def check_alpha_reachable() -> bool:
     # Just check if we can hit Celery flower, or check redis ping (if celery uses same redis)
