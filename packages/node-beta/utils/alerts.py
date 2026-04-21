@@ -35,3 +35,12 @@ def alert_success(job: str, detail: str = ""):
 
 def alert_failure(job: str, error: str):
     send_telegram(f"🚨 *AXIOM FAILURE* `{job}`\n```{error}```")
+
+def alert(level: str, job: str, message: str):
+    levels = {
+        "CRITICAL": "🔴 *CRITICAL*",
+        "HIGH": "🟠 *HIGH*",
+        "INFO": "🔵 *INFO*"
+    }
+    prefix = levels.get(level.upper(), "⚪ *INFO*")
+    send_telegram(f"{prefix} `{job}`\n{message}")
