@@ -50,9 +50,12 @@ def run_intraday_signal_check():
     except Exception as e:
         log.error(f"Failed to enqueue infer task: {e}")
 
+import paper_ledger
+
 def run_postmarket_summary():
     log.info("Running post-market summary and metrics update")
     # compute daily metrics -> notify bot
+    paper_ledger.execute_daily_paper_trades_and_snapshot()
     
 def run_all_scrapers():
     log.info("=== Scheduled scrape job started ===")
@@ -63,6 +66,7 @@ def run_all_scrapers():
         log.error(f"Scraper failed: {e}")
 
 from scrapers.rag_pipeline import run_nse_scrape_and_embed, run_rss_scrape_and_embed
+import vix_scraper
 
 def main():
     scheduler = BlockingScheduler(timezone="Asia/Kolkata")
@@ -91,6 +95,14 @@ def main():
         replace_existing=True
     )
     
+    # Job 3 — VIX Scraper before market opens
+    scheduler.add_job(
+        vix_scraper.fetch_and_store_vix,
+        CronTrigger(hour=8, minute=30, day_of_week="mon-fri"),
+        id="vix_scraper",
+        replace_existing=True
+    )
+
     # pre-market: 08:45 IST
     scheduler.add_job(run_premarket_pipeline, CronTrigger(hour=8, minute=45))
 
