@@ -59,7 +59,7 @@ def upgrade() -> None:
         sa.Column('daily_sharpe', sa.Float(), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
-    op.add_column('signals', sa.Column('is_tradeable', sa.Integer(), nullable=False, server_default=sa.text('1')))
+    op.add_column('signals', sa.Column('is_tradeable', sa.Integer(), nullable=True, server_default=sa.text('1')))
 
 def downgrade() -> None:
     op.drop_column('signals', 'is_tradeable')
