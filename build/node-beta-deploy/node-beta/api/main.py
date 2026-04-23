@@ -6,6 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routers import ohlcv, news, signals, rag
 
 logger = logging.getLogger(__name__)
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 app = FastAPI(
     title="AXIOM Internal API",
@@ -28,7 +34,7 @@ def _load_allowed_origins() -> list[str]:
             origins.append(origin)
         else:
             logger.warning("Ignoring invalid CORS origin '%s'", origin)
-    return origins or ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"]
+    return origins or DEFAULT_CORS_ORIGINS
 
 allowed_origins = _load_allowed_origins()
 
