@@ -6,6 +6,7 @@ Create Date: 2026-04-20 10:00:00.000000
 
 """
 import os
+import logging
 from typing import Sequence, Union
 
 from alembic import op
@@ -18,6 +19,7 @@ revision: str = 'phase10_pgvector'
 down_revision: Union[str, Sequence[str], None] = 'phase8_news_articles'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
+logger = logging.getLogger(__name__)
 
 
 def upgrade() -> None:
@@ -35,6 +37,7 @@ def upgrade() -> None:
     try:
         lists = int(os.getenv("PGVECTOR_IVFFLAT_LISTS", "100"))
     except ValueError:
+        logger.warning("Invalid PGVECTOR_IVFFLAT_LISTS value; defaulting to 100")
         lists = 100
     lists = max(1, min(lists, 10000))
     with op.get_context().autocommit_block():
