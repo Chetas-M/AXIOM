@@ -1,0 +1,16 @@
+[Unit]
+Description=AXIOM Node Beta API (FastAPI)
+After=network.target
+
+[Service]
+User=chetas
+Group=chetas
+WorkingDirectory=/home/chetas/axiom/packages/node-beta
+Environment="PATH=/home/chetas/axiom/packages/node-beta/.venv/bin"
+EnvironmentFile=/home/chetas/axiom/.env
+ExecStart=/home/chetas/axiom/packages/node-beta/.venv/bin/uvicorn api.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

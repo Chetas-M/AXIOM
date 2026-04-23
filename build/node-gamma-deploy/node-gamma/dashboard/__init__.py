@@ -1,0 +1,1 @@
+"""Lightweight signal review dashboard."""

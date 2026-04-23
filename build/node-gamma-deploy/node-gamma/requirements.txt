@@ -1,0 +1,4 @@
+-e ../shared
+python-telegram-bot
+apscheduler
+httpx
