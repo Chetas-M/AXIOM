@@ -34,12 +34,14 @@ def upgrade() -> None:
     # 3. Create indexes
     op.create_index('ix_news_articles_ticker', 'news_articles', ['ticker'])
     op.create_index('ix_news_articles_published_at', 'news_articles', ['published_at'])
+    lists = 100
+    raw_lists = os.getenv("PGVECTOR_IVFFLAT_LISTS", "100")
     try:
-        lists = int(os.getenv("PGVECTOR_IVFFLAT_LISTS", "100"))
+        parsed_lists = int(raw_lists)
     except ValueError:
         logger.warning("Invalid PGVECTOR_IVFFLAT_LISTS value; defaulting to 100")
-        lists = 100
-    lists = max(1, min(lists, 10000))
+    else:
+        lists = max(1, min(parsed_lists, 10000))
     with op.get_context().autocommit_block():
         op.execute(
             "CREATE INDEX CONCURRENTLY ix_news_articles_embedding "

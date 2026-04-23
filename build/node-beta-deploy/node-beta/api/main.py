@@ -28,7 +28,7 @@ def _load_allowed_origins() -> list[str]:
             origins.append(origin)
         else:
             logger.warning("Ignoring invalid CORS origin '%s'", origin)
-    return origins or ["http://localhost", "http://127.0.0.1"]
+    return origins or ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"]
 
 allowed_origins = _load_allowed_origins()
 
