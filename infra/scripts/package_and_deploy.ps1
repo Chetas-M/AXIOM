@@ -3,9 +3,14 @@ param(
     [string]$BetaUser = "user",
     [string]$GammaIp = "192.168.Y.Y",
     [string]$GammaUser = "user",
-    [string]$WorkspacePath = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+    [string]$WorkspacePath = (Join-Path $PSScriptRoot "..\..")
 )
 
+$WorkspacePath = [System.IO.Path]::GetFullPath($WorkspacePath)
+if (-not (Test-Path $WorkspacePath)) {
+    throw "WorkspacePath does not exist: $WorkspacePath"
+}
+$WorkspacePath = (Resolve-Path $WorkspacePath).Path
 $BuildDir = "$WorkspacePath\build"
 
 function Copy-DeployTree {

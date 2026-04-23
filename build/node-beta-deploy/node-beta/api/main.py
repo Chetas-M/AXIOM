@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import ohlcv, news, signals, rag
@@ -11,7 +12,18 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-allowed_origins = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost,http://127.0.0.1").split(",") if o.strip()]
+def _load_allowed_origins() -> list[str]:
+    configured = os.getenv("CORS_ALLOW_ORIGINS", "http://localhost,http://127.0.0.1")
+    origins: list[str] = []
+    for origin in (o.strip() for o in configured.split(",")):
+        if not origin or origin == "*":
+            continue
+        parsed = urlparse(origin)
+        if parsed.scheme in {"http", "https"} and parsed.netloc:
+            origins.append(origin)
+    return origins or ["http://localhost", "http://127.0.0.1"]
+
+allowed_origins = _load_allowed_origins()
 
 app.add_middleware(
     CORSMiddleware,
