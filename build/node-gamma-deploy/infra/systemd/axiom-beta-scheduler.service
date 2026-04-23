@@ -1,0 +1,16 @@
+[Unit]
+Description=AXIOM Node Beta Scheduler
+After=network.target
+
+[Service]
+User=chetas
+Group=chetas
+WorkingDirectory=/home/chetas/axiom/packages/node-beta
+Environment="PATH=/home/chetas/axiom/packages/node-beta/.venv/bin"
+EnvironmentFile=/home/chetas/axiom/.env
+ExecStart=/home/chetas/axiom/packages/node-beta/.venv/bin/python scheduler/main.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

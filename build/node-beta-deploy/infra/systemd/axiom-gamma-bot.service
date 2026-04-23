@@ -1,0 +1,22 @@
+[Unit]
+Description=Axiom Gamma Telegram Bot
+After=network.target
+
+[Service]
+User=chetas
+WorkingDirectory=/home/chetas/axiom/packages/node-gamma
+
+# Set your actual Telegram bot token and chat ID
+Environment="TELEGRAM_BOT_TOKEN=''
+Environment="TELEGRAM_CHAT_ID=''
+
+# Ensure Python can find the adjacent packages if needed
+Environment="PYTHONPATH=/home/chetas/axiom/packages"
+
+ExecStart=/home/chetas/axiom/packages/node-gamma/.venv/bin/python bot/main.py
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
