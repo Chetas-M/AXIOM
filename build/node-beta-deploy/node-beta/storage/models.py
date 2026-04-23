@@ -233,19 +233,3 @@ class SignalRun(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
-class MarketRegime(Base):
-    __tablename__ = 'market_regime'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(Date, nullable=False, unique=True)
-    vix = Column(Float, nullable=False)
-    regime = Column(String(50)) # NORMAL, HIGH_VOLATILITY, CHAOTIC
-    created_at = Column(DateTime, server_default=func.now())
-
-class SignalRun(Base):
-    __tablename__ = 'signal_runs'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    date = Column(Date, nullable=False, unique=True)
-    status = Column(String(50), nullable=False) # e.g. COMPLETED, SKIPPED_REGIME
-    reason = Column(String(255))
-    created_at = Column(DateTime, server_default=func.now())
-

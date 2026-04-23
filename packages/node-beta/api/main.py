@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import ohlcv, news, signals, rag
@@ -10,9 +11,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+allowed_origins = [o.strip() for o in os.getenv("CORS_ALLOW_ORIGINS", "http://localhost,http://127.0.0.1").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_methods=["GET"],
     allow_headers=["*"],
 )

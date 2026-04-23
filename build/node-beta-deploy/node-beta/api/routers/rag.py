@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends
 import time
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
@@ -12,6 +12,7 @@ router = APIRouter(prefix="/rag", tags=["RAG"])
 @router.get("/{ticker}")
 async def rag_query(ticker: str, top_k: int = 5, max_age_hours: int = 48, db: AsyncSession = Depends(get_db)):
     cutoff_timestamp = int(time.time()) - (max_age_hours * 3600)
+    ticker = ticker.upper()
     
     stmt = (
         select(NewsArticle)

@@ -15,25 +15,25 @@ GLOBAL_FEEDS = [
 def content_hash(title: str, url: str) -> str:
     return hashlib.sha256(f"{title}{url}".encode()).hexdigest()
 
-def parse_published(entry) -> datetime:
+def parse_published(entry) -> int:
     try:
         t = entry.get("published_parsed") or entry.get("updated_parsed")
         if t:
-            return datetime(*t[:6], tzinfo=timezone.utc)
+            return int(datetime(*t[:6], tzinfo=timezone.utc).timestamp())
     except Exception:
         pass
-    return datetime.now(timezone.utc)
+    return int(datetime.now(timezone.utc).timestamp())
 
 def scrape_feed(feed_url: str) -> list[dict]:
     feed = feedparser.parse(feed_url)
     articles = []
     for entry in feed.entries:
         articles.append({
-            "title":      entry.get("title", "")[:500],
+            "headline":   entry.get("title", "")[:500],
             "url":        entry.get("link", "")[:1000],
             "source":     feed.feed.get("title", feed_url)[:200],
-            "published":  parse_published(entry),
-            "summary":    entry.get("summary", "")[:2000],
+            "published_at": parse_published(entry),
+            "body_snippet": entry.get("summary", "")[:2000],
             "content_hash": content_hash(
                 entry.get("title", ""),
                 entry.get("link", "")
@@ -44,9 +44,9 @@ def scrape_feed(feed_url: str) -> list[dict]:
 def upsert_articles(conn, articles: list[dict]):
     sql = """
         INSERT INTO news_articles
-            (title, url, source, published_at, summary, content_hash)
+            (headline, url, source, published_at, body_snippet, content_hash)
         VALUES
-            (%(title)s, %(url)s, %(source)s, %(published)s, %(summary)s, %(content_hash)s)
+            (%(headline)s, %(url)s, %(source)s, %(published_at)s, %(body_snippet)s, %(content_hash)s)
         ON CONFLICT (content_hash) DO NOTHING;
     """
     inserted = 0

@@ -47,7 +47,7 @@ def backfill_embeddings():
     session = SessionLocal()
     try:
         # Fetch rows without embeddings
-        articles = session.query(NewsArticle).filter(NewsArticle.embedding == None).all()
+        articles = session.query(NewsArticle).filter(NewsArticle.embedding.is_(None)).all()
         logger.info(f"Found {len(articles)} articles missing embeddings.")
 
         if not articles:
@@ -72,7 +72,7 @@ def backfill_embeddings():
             
             # Update DB
             for env_vec, doc in embedded:
-                article = session.query(NewsArticle).get(doc["id"])
+                article = session.get(NewsArticle, doc["id"])
                 if article:
                     article.embedding = env_vec
                     article.embedded_at = datetime.now(timezone.utc)

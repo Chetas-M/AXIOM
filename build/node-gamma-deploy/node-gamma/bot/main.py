@@ -3,6 +3,7 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 import os
 import requests
+import time
 from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
@@ -57,10 +58,11 @@ def main():
     try:
         # keep alive
         while True:
-            pass
+            time.sleep(60)
     except KeyboardInterrupt:
         pass
+    finally:
+        scheduler.shutdown(wait=False)
 
 if __name__ == "__main__":
     main()
-

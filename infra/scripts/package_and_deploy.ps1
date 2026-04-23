@@ -2,11 +2,52 @@ param(
     [string]$BetaIp = "192.168.X.X",
     [string]$BetaUser = "user",
     [string]$GammaIp = "192.168.Y.Y",
-    [string]$GammaUser = "user"
+    [string]$GammaUser = "user",
+    [string]$WorkspacePath = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 )
 
-$WorkspacePath = "D:\New folder\AXIOM"
 $BuildDir = "$WorkspacePath\build"
+
+function Copy-DeployTree {
+    param(
+        [string]$Source,
+        [string]$Destination
+    )
+
+    $excludeDirs = @(".git", ".venv", "venv", "__pycache__", "node_modules", "dist", "build")
+    $excludeFiles = @("*.pyc", "*.pyo", ".DS_Store")
+
+    if (-not (Test-Path $Destination)) {
+        New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+    }
+
+    Get-ChildItem -Path $Source -Recurse -File | Where-Object {
+        $fullPath = $_.FullName
+        $skipDir = $false
+        foreach ($dir in $excludeDirs) {
+            if ($fullPath -match [regex]::Escape("\$dir\")) {
+                $skipDir = $true
+                break
+            }
+        }
+        if ($skipDir) { return $false }
+
+        foreach ($pattern in $excludeFiles) {
+            if ($_.Name -like $pattern) {
+                return $false
+            }
+        }
+        return $true
+    } | ForEach-Object {
+        $relative = $_.FullName.Substring($Source.Length).TrimStart('\')
+        $target = Join-Path $Destination $relative
+        $targetDir = Split-Path -Parent $target
+        if (-not (Test-Path $targetDir)) {
+            New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination $target -Force
+    }
+}
 
 # Clean and create build directory
 if (Test-Path $BuildDir) { Remove-Item -Recurse -Force $BuildDir }
@@ -15,9 +56,10 @@ New-Item -ItemType Directory -Path $BuildDir | Out-Null
 Write-Host "?? Packaging Node-Beta..." -ForegroundColor Cyan
 $BetaTemp = "$BuildDir\node-beta-deploy"
 New-Item -ItemType Directory -Path $BetaTemp | Out-Null
-Copy-Item -Recurse "$WorkspacePath\packages\node-beta" "$BetaTemp\node-beta"
-Copy-Item -Recurse "$WorkspacePath\packages\shared" "$BetaTemp\shared"
-Copy-Item -Recurse "$WorkspacePath\infra" "$BetaTemp\infra"
+Copy-DeployTree -Source "$WorkspacePath\packages\node-beta" -Destination "$BetaTemp\node-beta"
+Copy-DeployTree -Source "$WorkspacePath\packages\shared" -Destination "$BetaTemp\shared"
+Copy-DeployTree -Source "$WorkspacePath\infra\systemd" -Destination "$BetaTemp\infra\systemd"
+Copy-DeployTree -Source "$WorkspacePath\infra\scripts" -Destination "$BetaTemp\infra\scripts"
 Set-Location -Path $BetaTemp
 tar.exe -czf "$BuildDir\node-beta.tar.gz" .
 Set-Location -Path $WorkspacePath
@@ -25,9 +67,10 @@ Set-Location -Path $WorkspacePath
 Write-Host "?? Packaging Node-Gamma..." -ForegroundColor Cyan
 $GammaTemp = "$BuildDir\node-gamma-deploy"
 New-Item -ItemType Directory -Path $GammaTemp | Out-Null
-Copy-Item -Recurse "$WorkspacePath\packages\node-gamma" "$GammaTemp\node-gamma"
-Copy-Item -Recurse "$WorkspacePath\packages\shared" "$GammaTemp\shared"
-Copy-Item -Recurse "$WorkspacePath\infra" "$GammaTemp\infra"
+Copy-DeployTree -Source "$WorkspacePath\packages\node-gamma" -Destination "$GammaTemp\node-gamma"
+Copy-DeployTree -Source "$WorkspacePath\packages\shared" -Destination "$GammaTemp\shared"
+Copy-DeployTree -Source "$WorkspacePath\infra\systemd" -Destination "$GammaTemp\infra\systemd"
+Copy-DeployTree -Source "$WorkspacePath\infra\scripts" -Destination "$GammaTemp\infra\scripts"
 Set-Location -Path $GammaTemp
 tar.exe -czf "$BuildDir\node-gamma.tar.gz" .
 Set-Location -Path $WorkspacePath

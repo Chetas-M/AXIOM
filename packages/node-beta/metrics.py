@@ -1,4 +1,5 @@
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from storage.db import SessionLocal
 from storage.models import PaperPosition, PortfolioSnapshot
@@ -13,7 +14,7 @@ def compute_daily_metrics(target_date: date):
         # fetch closed trades for today
         closed_trades = db.query(PaperPosition).filter(
             PaperPosition.status == "CLOSED",
-            db.func.date(PaperPosition.exit_time) == target_date
+            func.date(PaperPosition.exit_time) == target_date
         ).all()
         
         wins, losses = 0, 0

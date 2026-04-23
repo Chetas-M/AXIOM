@@ -4,7 +4,11 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import urllib.parse
 
-load_dotenv(os.path.expanduser("~/axiom/.env"))
+dotenv_path = os.environ.get("DOTENV_PATH")
+if dotenv_path:
+    load_dotenv(os.path.expanduser(dotenv_path))
+else:
+    load_dotenv()
 
 pw = urllib.parse.quote_plus(os.environ.get("POSTGRES_PASSWORD", ""))
 user = os.environ.get("POSTGRES_USER", "axiom")

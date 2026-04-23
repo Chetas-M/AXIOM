@@ -24,7 +24,7 @@ async def get_news(
         params["source"] = f"%{source}%"
 
     sql = text(f"""
-        SELECT id, title, url, source, ticker, published_at, summary
+        SELECT id, headline, url, source, ticker, published_at, body_snippet
         FROM news_articles
         {filters}
         ORDER BY published_at DESC

@@ -1,7 +1,8 @@
 import feedparser
 import re
 import logging
-from datetime import datetime, timedelta
+import calendar
+from datetime import datetime, timedelta, timezone
 from storage.db import get_conn
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def extract_ticker(text, known_tickers):
 def scrape_rss_feeds() -> list[dict]:
     known_tickers = load_tickers_from_db()
 
-    cutoff_time = datetime.now() - timedelta(hours=48)
+    cutoff_time = datetime.now(timezone.utc) - timedelta(hours=48)
     cutoff_ts = int(cutoff_time.timestamp())
 
     articles = []
@@ -55,7 +56,7 @@ def scrape_rss_feeds() -> list[dict]:
             
             # Format time
             try:
-                published_ts = int(time.mktime(published))
+                published_ts = int(calendar.timegm(published))
             except Exception:
                 continue
 

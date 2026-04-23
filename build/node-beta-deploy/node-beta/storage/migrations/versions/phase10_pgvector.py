@@ -5,6 +5,7 @@ Revises: phase8_news_articles
 Create Date: 2026-04-20 10:00:00.000000
 
 """
+import os
 from typing import Sequence, Union
 
 from alembic import op
@@ -31,11 +32,12 @@ def upgrade() -> None:
     # 3. Create indexes
     op.create_index('ix_news_articles_ticker', 'news_articles', ['ticker'])
     op.create_index('ix_news_articles_published_at', 'news_articles', ['published_at'])
+    lists = max(1, int(os.getenv("PGVECTOR_IVFFLAT_LISTS", "100")))
     with op.get_context().autocommit_block():
         op.execute(
             "CREATE INDEX CONCURRENTLY ix_news_articles_embedding "
             "ON news_articles USING ivfflat (embedding vector_cosine_ops) "
-            "WITH (lists = 100);"
+            f"WITH (lists = {lists});"
         )
 
 

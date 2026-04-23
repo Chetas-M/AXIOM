@@ -19,27 +19,117 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Drop columns from Phase 3 schema that are obsolete
-    op.drop_column('news_articles', 'title')
-    op.drop_column('news_articles', 'summary')
-    op.drop_column('news_articles', 'embedding_id')
-    op.drop_column('news_articles', 'published_at')
-    
-    # Re-add as per Phase 8 definition
-    op.add_column('news_articles', sa.Column('headline', sa.Text(), nullable=False, server_default=''))
-    op.add_column('news_articles', sa.Column('body_snippet', sa.Text(), nullable=True))
-    op.add_column('news_articles', sa.Column('published_at', sa.Integer(), nullable=True))
-    op.alter_column('news_articles', 'url', existing_type=sa.Text(), nullable=False)
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
+
+    with op.batch_alter_table('news_articles') as batch_op:
+        batch_op.alter_column(
+            'title',
+            existing_type=sa.Text(),
+            existing_nullable=False,
+            existing_server_default=sa.text("''"),
+            new_column_name='headline',
+            server_default='',
+        )
+        batch_op.alter_column(
+            'summary',
+            existing_type=sa.Text(),
+            existing_nullable=True,
+            new_column_name='body_snippet',
+        )
+        batch_op.add_column(sa.Column('published_at_new', sa.Integer(), nullable=True))
+
+    if dialect_name == 'postgresql':
+        op.execute(
+            """
+            UPDATE news_articles
+            SET published_at_new = CAST(EXTRACT(EPOCH FROM published_at) AS INTEGER)
+            WHERE published_at IS NOT NULL
+            """
+        )
+    elif dialect_name == 'sqlite':
+        op.execute(
+            """
+            UPDATE news_articles
+            SET published_at_new = CAST(strftime('%s', published_at) AS INTEGER)
+            WHERE published_at IS NOT NULL
+            """
+        )
+    else:
+        op.execute(
+            """
+            UPDATE news_articles
+            SET published_at_new = UNIX_TIMESTAMP(published_at)
+            WHERE published_at IS NOT NULL
+            """
+        )
+
+    with op.batch_alter_table('news_articles') as batch_op:
+        batch_op.drop_column('published_at')
+        batch_op.drop_column('embedding_id')
+        batch_op.alter_column(
+            'published_at_new',
+            existing_type=sa.Integer(),
+            existing_nullable=True,
+            new_column_name='published_at',
+        )
+        batch_op.alter_column('url', existing_type=sa.Text(), nullable=False)
     # content_hash was already unique in Phase 3, so we keep it.
 
 
 def downgrade() -> None:
-    op.drop_column('news_articles', 'published_at')
-    op.drop_column('news_articles', 'headline')
-    op.drop_column('news_articles', 'body_snippet')
-    
-    op.add_column('news_articles', sa.Column('title', sa.Text(), nullable=False, server_default=''))
-    op.add_column('news_articles', sa.Column('summary', sa.Text(), nullable=True))
-    op.add_column('news_articles', sa.Column('embedding_id', sa.String(length=100), nullable=True))
-    op.add_column('news_articles', sa.Column('published_at', sa.DateTime(), nullable=True))
-    op.alter_column('news_articles', 'url', existing_type=sa.Text(), nullable=True)
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
+
+    with op.batch_alter_table('news_articles') as batch_op:
+        batch_op.add_column(sa.Column('published_at_old', sa.DateTime(), nullable=True))
+
+    if dialect_name == 'postgresql':
+        op.execute(
+            """
+            UPDATE news_articles
+            SET published_at_old = to_timestamp(published_at)
+            WHERE published_at IS NOT NULL
+            """
+        )
+    elif dialect_name == 'sqlite':
+        op.execute(
+            """
+            UPDATE news_articles
+            SET published_at_old = datetime(published_at, 'unixepoch')
+            WHERE published_at IS NOT NULL
+            """
+        )
+    else:
+        op.execute(
+            """
+            UPDATE news_articles
+            SET published_at_old = FROM_UNIXTIME(published_at)
+            WHERE published_at IS NOT NULL
+            """
+        )
+
+    with op.batch_alter_table('news_articles') as batch_op:
+        batch_op.drop_column('published_at')
+        batch_op.alter_column(
+            'headline',
+            existing_type=sa.Text(),
+            existing_nullable=False,
+            existing_server_default=sa.text("''"),
+            new_column_name='title',
+            server_default='',
+        )
+        batch_op.alter_column(
+            'body_snippet',
+            existing_type=sa.Text(),
+            existing_nullable=True,
+            new_column_name='summary',
+        )
+        batch_op.add_column(sa.Column('embedding_id', sa.String(length=100), nullable=True))
+        batch_op.alter_column(
+            'published_at_old',
+            existing_type=sa.DateTime(),
+            existing_nullable=True,
+            new_column_name='published_at',
+        )
+        batch_op.alter_column('url', existing_type=sa.Text(), nullable=True)
