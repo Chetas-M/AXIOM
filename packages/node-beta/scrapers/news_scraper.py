@@ -28,15 +28,20 @@ def scrape_feed(feed_url: str) -> list[dict]:
     feed = feedparser.parse(feed_url)
     articles = []
     for entry in feed.entries:
+        headline = entry.get("title", "").strip()
+        url = entry.get("link", "").strip()
+        if not headline or not url:
+            continue
+
         articles.append({
-            "headline":   entry.get("title", "")[:500],
-            "url":        entry.get("link", "")[:1000],
+            "headline":   headline[:500],
+            "url":        url[:1000],
             "source":     feed.feed.get("title", feed_url)[:200],
             "published_at": parse_published(entry),
             "body_snippet": entry.get("summary", "")[:2000],
             "content_hash": content_hash(
-                entry.get("title", ""),
-                entry.get("link", "")
+                headline,
+                url
             ),
         })
     return articles
