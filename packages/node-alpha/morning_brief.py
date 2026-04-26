@@ -70,10 +70,7 @@ def generate_brief(tickers: list[str]) -> str:
 
 
 def run_morning_brief():
-    logger.info("Fetching signals...")
-    signals = fetch_signals()
-    tickers = list(signals.keys())
-    narration = generate_brief(tickers)
+    narration = generate_brief([])
     send_telegram(narration)
 
 

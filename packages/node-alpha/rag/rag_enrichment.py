@@ -1,11 +1,11 @@
-import os
 from datetime import datetime
 
 import requests
+from axiom_shared.config import BETA_API_URL
 
 
 def _get_beta_api_base_url() -> str:
-    return os.getenv("BETA_API_URL", "http://localhost:8000").rstrip("/")
+    return BETA_API_URL.rstrip("/")
 
 
 def build_context_block(tickers: list[str]) -> str:

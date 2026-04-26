@@ -1,5 +1,4 @@
 import importlib.util
-import os
 import sys
 import types
 import unittest
@@ -21,16 +20,27 @@ def load_morning_brief(requests_module):
     loader_mod = types.ModuleType("llm.loader")
     loader_mod.get_llm_client = lambda: None
 
+    missing = object()
+    module_names = ("requests", "llm.prompts", "rag.rag_enrichment", "llm.loader")
+    original_modules = {name: sys.modules.get(name, missing) for name in module_names}
+
     sys.modules["requests"] = requests_module
     sys.modules["llm.prompts"] = prompts_mod
     sys.modules["rag.rag_enrichment"] = rag_mod
     sys.modules["llm.loader"] = loader_mod
 
-    spec = importlib.util.spec_from_file_location("test_morning_brief_module", MODULE_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+    try:
+        spec = importlib.util.spec_from_file_location("test_morning_brief_module", MODULE_PATH)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        for name, original in original_modules.items():
+            if original is missing:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = original
 
 
 class MorningBriefTests(unittest.TestCase):
@@ -76,22 +86,34 @@ class RagEnrichmentTests(unittest.TestCase):
 
         requests_mod.get = fake_get
         requests_mod.RequestException = Exception
+
+        missing = object()
+        rag_module_names = ("requests", "axiom_shared", "axiom_shared.config")
+        original_rag_modules = {
+            name: sys.modules.get(name, missing) for name in rag_module_names
+        }
+
+        axiom_shared_mod = types.ModuleType("axiom_shared")
+        axiom_config_mod = types.ModuleType("axiom_shared.config")
+        axiom_config_mod.BETA_API_URL = "http://beta.internal:9000/"
+
         sys.modules["requests"] = requests_mod
+        sys.modules["axiom_shared"] = axiom_shared_mod
+        sys.modules["axiom_shared.config"] = axiom_config_mod
 
         spec = importlib.util.spec_from_file_location("test_rag_module", RAG_MODULE_PATH)
         module = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
 
-        old_url = os.environ.get("BETA_API_URL")
-        os.environ["BETA_API_URL"] = "http://beta.internal:9000/"
         try:
             spec.loader.exec_module(module)
             result = module.build_context_block(["RELIANCE"])
         finally:
-            if old_url is None:
-                os.environ.pop("BETA_API_URL", None)
-            else:
-                os.environ["BETA_API_URL"] = old_url
+            for name, original in original_rag_modules.items():
+                if original is missing:
+                    sys.modules.pop(name, None)
+                else:
+                    sys.modules[name] = original
 
         self.assertEqual(captured["url"], "http://beta.internal:9000/rag/RELIANCE")
         self.assertIn("et - Headline", result)

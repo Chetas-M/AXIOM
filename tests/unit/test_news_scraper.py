@@ -16,14 +16,25 @@ def load_news_scraper(feed):
     base_mod = types.ModuleType("base")
     base_mod.get_conn = lambda: None
 
+    missing = object()
+    module_names = ("feedparser", "base")
+    original_modules = {name: sys.modules.get(name, missing) for name in module_names}
+
     sys.modules["feedparser"] = feedparser_mod
     sys.modules["base"] = base_mod
 
-    spec = importlib.util.spec_from_file_location("test_news_scraper_module", MODULE_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+    try:
+        spec = importlib.util.spec_from_file_location("test_news_scraper_module", MODULE_PATH)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+        return module
+    finally:
+        for name, original in original_modules.items():
+            if original is missing:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = original
 
 
 class NewsScraperTests(unittest.TestCase):
