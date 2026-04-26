@@ -1,5 +1,12 @@
-import requests
+import os
 from datetime import datetime
+
+import requests
+
+
+def _get_beta_api_base_url() -> str:
+    return os.getenv("BETA_API_URL", "http://localhost:8000").rstrip("/")
+
 
 def build_context_block(tickers: list[str]) -> str:
     """
@@ -7,19 +14,20 @@ def build_context_block(tickers: list[str]) -> str:
     format results into the context_block string.
     """
     lines = []
+    base_url = _get_beta_api_base_url()
     for ticker in tickers:
         try:
             resp = requests.get(
-                f"http://node-beta:8000/rag/{ticker}",  # Assumes node-beta is running on 8000
+                f"{base_url}/rag/{ticker}",
                 params={"top_k": 5},
-                timeout=10
+                timeout=10,
             )
             docs = resp.json() if resp.ok else []
             for doc in docs:
                 ts = datetime.fromtimestamp(doc["published_at"]).strftime("%Y-%m-%d %H:%M")
-                lines.append(f"[{ticker}] ({ts}) {doc['source']} — {doc['headline']}")
+                lines.append(f"[{ticker}] ({ts}) {doc['source']} - {doc['headline']}")
         except requests.RequestException:
             # Fall back gracefully per instruction
             continue
-            
+
     return "\n".join(lines) if lines else "No news context retrieved."
