@@ -30,7 +30,10 @@ def load_paper_ledger():
         status = object()
 
     class PortfolioSnapshot:
-        pass
+        snapshot_date = object()
+
+        def __init__(self, snapshot_date=None):
+            self.snapshot_date = snapshot_date
 
     class SignalRun:
         date = object()
@@ -89,6 +92,50 @@ class PaperLedgerTests(unittest.TestCase):
         module.SessionLocal = lambda: FakeSession()
 
         module.execute_daily_paper_trades_and_snapshot()
+
+    def test_existing_snapshot_is_updated_instead_of_duplicated(self):
+        module, models = load_paper_ledger()
+
+        existing_snapshot = models.PortfolioSnapshot(snapshot_date="today")
+        existing_snapshot.total_capital = 0.0
+
+        class FakeSession:
+            def __init__(self):
+                self.added = []
+                self.committed = False
+
+            def query(self, model):
+                if model is models.SignalRun:
+                    return FakeQuery(first_result=None)
+                if model is models.Signal:
+                    return FakeQuery(all_result=[])
+                if model is models.PaperPosition:
+                    return FakeQuery(first_result=None, all_result=[])
+                if model is models.PortfolioSnapshot:
+                    return FakeQuery(first_result=existing_snapshot)
+                raise AssertionError(f"Unexpected query for {model}")
+
+            def add(self, obj):
+                self.added.append(obj)
+
+            def commit(self):
+                self.committed = True
+
+            def rollback(self):
+                raise AssertionError("rollback should not be called")
+
+            def close(self):
+                pass
+
+        fake_session = FakeSession()
+        module.SessionLocal = lambda: fake_session
+
+        module.execute_daily_paper_trades_and_snapshot()
+
+        self.assertEqual(fake_session.added, [])
+        self.assertTrue(fake_session.committed)
+        self.assertEqual(existing_snapshot.open_positions, 0)
+        self.assertEqual(existing_snapshot.total_capital, 100000.0)
 
 
 if __name__ == "__main__":

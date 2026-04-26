@@ -81,16 +81,19 @@ def execute_daily_paper_trades_and_snapshot():
 
         total_capital = 100000.0 + unrealized_pnl  # Assuming base 100k
 
-        snapshot = PortfolioSnapshot(
-            snapshot_date=today,
-            total_capital=total_capital,
-            deployed_capital=total_deployed,
-            unrealized_pnl=unrealized_pnl,
-            realized_pnl=0.0,
-            open_positions=len(open_positions),
-            daily_sharpe=0.0,  # Mocked
-        )
-        session.add(snapshot)
+        snapshot = session.query(PortfolioSnapshot).filter(
+            PortfolioSnapshot.snapshot_date == today
+        ).first()
+        if snapshot is None:
+            snapshot = PortfolioSnapshot(snapshot_date=today)
+            session.add(snapshot)
+
+        snapshot.total_capital = total_capital
+        snapshot.deployed_capital = total_deployed
+        snapshot.unrealized_pnl = unrealized_pnl
+        snapshot.realized_pnl = 0.0
+        snapshot.open_positions = len(open_positions)
+        snapshot.daily_sharpe = 0.0  # Mocked
         session.commit()
         logger.info(
             f"Recorded End-of-Day Portfolio Snapshot: {total_capital} capital, {unrealized_pnl} uPNL"
