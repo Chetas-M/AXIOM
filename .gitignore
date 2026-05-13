@@ -1,4 +1,32 @@
-﻿# Root
+# ---- Secrets / environment ----
 .env*
-*.log
+*.env
+/etc/axiom/
+
+# ---- Python ----
 __pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+venv/
+.venv/
+
+# ---- Build artifacts ----
+build/
+dist/
+
+# ---- Logs ----
+*.log
+
+# ---- IDE ----
+.vscode/
+.idea/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Sensitive scripts (historically contained credentials) ----
+# If you need a deployment helper, use the template in infra/
+# and never hard-code secrets.
+update-gamma.sh
