@@ -7,7 +7,10 @@ User=chetas
 WorkingDirectory=/home/chetas/axiom/packages/node-gamma
 
 # Secrets loaded from a root-owned env-file (never commit this file)
-# Create it:  sudo mkdir -p /etc/axiom && sudo tee /etc/axiom/gamma.env
+# Create it securely:
+#   sudo install -d -m 700 /etc/axiom
+#   sudo sh -c 'cat > /etc/axiom/gamma.env'
+#   sudo chown root:root /etc/axiom/gamma.env && sudo chmod 600 /etc/axiom/gamma.env
 EnvironmentFile=/etc/axiom/gamma.env
 
 # Ensure Python can find the adjacent packages if needed

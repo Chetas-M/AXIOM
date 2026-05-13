@@ -72,6 +72,7 @@ class RagEnrichmentTests(unittest.TestCase):
 
         def fake_get(url, **kwargs):
             captured["url"] = url
+            captured["headers"] = kwargs.get("headers", {})
             return Response()
 
         requests_mod.get = fake_get
@@ -83,7 +84,9 @@ class RagEnrichmentTests(unittest.TestCase):
         assert spec.loader is not None
 
         old_url = os.environ.get("BETA_API_URL")
+        old_api_key = os.environ.get("AXIOM_API_KEY")
         os.environ["BETA_API_URL"] = "http://beta.internal:9000/"
+        os.environ["AXIOM_API_KEY"] = "test-shared-key"
         try:
             spec.loader.exec_module(module)
             result = module.build_context_block(["RELIANCE"])
@@ -92,8 +95,13 @@ class RagEnrichmentTests(unittest.TestCase):
                 os.environ.pop("BETA_API_URL", None)
             else:
                 os.environ["BETA_API_URL"] = old_url
+            if old_api_key is None:
+                os.environ.pop("AXIOM_API_KEY", None)
+            else:
+                os.environ["AXIOM_API_KEY"] = old_api_key
 
         self.assertEqual(captured["url"], "http://beta.internal:9000/rag/RELIANCE")
+        self.assertEqual(captured["headers"]["X-API-Key"], "test-shared-key")
         self.assertIn("et - Headline", result)
 
 

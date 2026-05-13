@@ -8,6 +8,11 @@ def _get_beta_api_base_url() -> str:
     return os.getenv("BETA_API_URL", "http://localhost:8000").rstrip("/")
 
 
+def _get_beta_api_headers() -> dict[str, str]:
+    api_key = os.getenv("AXIOM_API_KEY")
+    return {"X-API-Key": api_key} if api_key else {}
+
+
 def build_context_block(tickers: list[str]) -> str:
     """
     For each ticker in the watchlist, call node-beta RAG endpoint,
@@ -20,6 +25,7 @@ def build_context_block(tickers: list[str]) -> str:
             resp = requests.get(
                 f"{base_url}/rag/{ticker}",
                 params={"top_k": 5},
+                headers=_get_beta_api_headers(),
                 timeout=10,
             )
             docs = resp.json() if resp.ok else []
