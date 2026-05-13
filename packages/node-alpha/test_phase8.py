@@ -1,14 +1,24 @@
 import requests
 import logging
+import os
 from rag.rag_enrichment import build_context_block
 from llm.prompts import MORNING_BRIEF_PROMPT
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def _get_beta_auth_headers():
+    api_key = os.getenv("AXIOM_API_KEY")
+    return {"X-API-Key": api_key} if api_key else {}
+
 def test_rag_endpoint():
     logger.info("Testing /rag/RELIANCE endpoint on node-beta...")
-    resp = requests.get("http://node-beta:8000/rag/RELIANCE", params={"top_k": 5}, timeout=10)
+    resp = requests.get(
+        "http://node-beta:8000/rag/RELIANCE",
+        params={"top_k": 5},
+        headers=_get_beta_auth_headers(),
+        timeout=10,
+    )
     assert resp.ok, "RAG endpoint failed"
     data = resp.json()
     assert isinstance(data, list), "Response is not a list"

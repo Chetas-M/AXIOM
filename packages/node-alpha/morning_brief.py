@@ -28,6 +28,23 @@ def format_signals(signals_dict):
 
 def send_telegram(text: str):
     logger.info("Sending to telegram: \n%s", text)
+    
+    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    
+    if not bot_token or not chat_id:
+        logger.warning("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set. Skipping real send.")
+        return
+
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        response.raise_for_status()
+        logger.info("Telegram message sent successfully.")
+    except Exception:
+        logger.exception("Failed to send Telegram message")
 
 
 def generate_brief(tickers: list[str]) -> str:
