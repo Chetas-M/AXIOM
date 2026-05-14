@@ -3,6 +3,7 @@ import logging
 from urllib.parse import urlparse
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from api.routers import ohlcv, news, signals, rag
 from api.auth import require_api_key
 
@@ -13,6 +14,8 @@ DEFAULT_CORS_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
+
+is_development = os.getenv("AXIOM_ENV", "development").lower() == "development"
 
 app = FastAPI(
     title="AXIOM Internal API",
@@ -38,7 +41,20 @@ def _load_allowed_origins() -> list[str]:
             logger.warning("Ignoring invalid CORS origin '%s'", origin)
     return origins or DEFAULT_CORS_ORIGINS
 
+def _load_allowed_hosts() -> list[str]:
+    configured = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,node-beta")
+    hosts = [host.strip() for host in configured.split(",") if host.strip()]
+    if not hosts:
+        logger.warning("No valid TRUSTED_HOSTS configured; defaulting to localhost-only hosts")
+        return ["localhost", "127.0.0.1", "node-beta"]
+    return hosts
+
 allowed_origins = _load_allowed_origins()
+allowed_hosts = _load_allowed_hosts()
+
+app.add_middleware(
+    TrustedHostMiddleware, allowed_hosts=allowed_hosts
+)
 
 app.add_middleware(
     CORSMiddleware,

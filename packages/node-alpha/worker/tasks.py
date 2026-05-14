@@ -26,6 +26,9 @@ POSTGRES_DSN = os.getenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/
 engine = create_engine(POSTGRES_DSN)
 SessionLocal = sessionmaker(bind=engine)
 
+def _is_development_env() -> bool:
+    return os.getenv("AXIOM_ENV", "development").lower() == "development"
+
 def is_expired(enqueued_at: str, expiry_seconds: int) -> bool:
     try:
         dt = datetime.fromisoformat(str(enqueued_at).replace("Z", "+00:00"))
@@ -84,6 +87,32 @@ def infer_signals(payload: dict):
     
     logger.info(f"Inferring signals for {task.tickers} on {task.date}")
     
+    is_development = _is_development_env()
+    if not is_development:
+        logger.error("Real model runners are not yet linked. Failing closed in production.")
+        session = SessionLocal()
+        try:
+            run_date = datetime.strptime(task.date, "%Y-%m-%d").date()
+            existing_sr = session.query(SignalRun).filter(SignalRun.date == run_date).first()
+            if existing_sr:
+                existing_sr.status = "SKIPPED_NO_MODELS"
+                existing_sr.reason = "Real model runners are not linked in production"
+            else:
+                session.add(
+                    SignalRun(
+                        date=run_date,
+                        status="SKIPPED_NO_MODELS",
+                        reason="Real model runners are not linked in production",
+                    )
+                )
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to record skipped production inference run: {e}")
+        finally:
+            session.close()
+        return
+    
     session = SessionLocal()
     try:
         run_date = datetime.strptime(task.date, "%Y-%m-%d").date()
@@ -108,22 +137,38 @@ def infer_signals(payload: dict):
             ensemble_val = (LSTM_pred + XGB_pred + PROPHET_pred) / 3.0
             confidence = ensemble_val
             direction = "LONG" if ensemble_val > 0.5 else "SHORT"
-            is_tradeable = 1 if confidence >= 0.65 else 0
+            # Mock signals are forced non-tradeable
+            is_tradeable = 0
             
-            sig = Signal(
+            existing_sig = session.query(Signal).filter_by(
                 ticker=ticker,
                 date=run_date,
-                signal_type="ensemble",
-                value=ensemble_val,
-                direction=direction,
-                confidence=confidence,
-                is_tradeable=is_tradeable,
-                narration="Ensemble predicts upwards",
-                model_votes={"lstm": LSTM_pred, "xgb": XGB_pred, "prophet": PROPHET_pred},
-                features_version="v2.1",
-                model_version="v2.1"
-            )
-            session.add(sig)
+                signal_type="ensemble"
+            ).first()
+            if existing_sig:
+                existing_sig.value = ensemble_val
+                existing_sig.direction = direction
+                existing_sig.confidence = confidence
+                existing_sig.is_tradeable = is_tradeable
+                existing_sig.narration = "Ensemble predicts upwards"
+                existing_sig.model_votes = {"lstm": LSTM_pred, "xgb": XGB_pred, "prophet": PROPHET_pred}
+                existing_sig.features_version = "v2.1"
+                existing_sig.model_version = "v2.1"
+            else:
+                sig = Signal(
+                    ticker=ticker,
+                    date=run_date,
+                    signal_type="ensemble",
+                    value=ensemble_val,
+                    direction=direction,
+                    confidence=confidence,
+                    is_tradeable=is_tradeable,
+                    narration="Ensemble predicts upwards",
+                    model_votes={"lstm": LSTM_pred, "xgb": XGB_pred, "prophet": PROPHET_pred},
+                    features_version="v2.1",
+                    model_version="v2.1"
+                )
+                session.add(sig)
             
         existing_sr = session.query(SignalRun).filter(SignalRun.date == run_date).first()
         if existing_sr:
