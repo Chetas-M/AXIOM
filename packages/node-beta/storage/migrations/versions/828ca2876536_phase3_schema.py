@@ -28,9 +28,25 @@ def upgrade() -> None:
     # 2. Backfill data
     op.execute(
         """
-        UPDATE news_articles
-        SET title = headline,
-            content_hash = md5(url || headline)
+        WITH hashed_rows AS (
+            SELECT
+                id,
+                headline,
+                md5(COALESCE(url, '') || COALESCE(headline, '')) AS base_hash,
+                row_number() OVER (
+                    PARTITION BY COALESCE(url, ''), COALESCE(headline, '')
+                    ORDER BY id
+                ) AS duplicate_rank
+            FROM news_articles
+        )
+        UPDATE news_articles AS na
+        SET title = hr.headline,
+            content_hash = CASE
+                WHEN hr.duplicate_rank = 1 THEN hr.base_hash
+                ELSE md5(hr.base_hash || ':' || na.id::text)
+            END
+        FROM hashed_rows AS hr
+        WHERE na.id = hr.id
         """
     )
 

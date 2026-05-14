@@ -56,6 +56,7 @@ Used elsewhere in Beta or related health checks:
 - `QDRANT_PORT`
 - `QDRANT_HEALTH_URL`
 - `API_HEALTH_URL`
+- `TRUSTED_HOSTS` (comma-separated hostnames for `TrustedHostMiddleware`, e.g. `api.example.com,localhost`)
 
 The code attempts to load Beta config from `~/axiom/.env`, and the systemd units also reference `/home/chetas/axiom/.env`.
 

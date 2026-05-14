@@ -41,10 +41,19 @@ def _load_allowed_origins() -> list[str]:
             logger.warning("Ignoring invalid CORS origin '%s'", origin)
     return origins or DEFAULT_CORS_ORIGINS
 
+def _load_allowed_hosts() -> list[str]:
+    configured = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,node-beta")
+    hosts = [host.strip() for host in configured.split(",") if host.strip()]
+    if not hosts:
+        logger.warning("No valid TRUSTED_HOSTS configured; defaulting to localhost-only hosts")
+        return ["localhost", "127.0.0.1", "node-beta"]
+    return hosts
+
 allowed_origins = _load_allowed_origins()
+allowed_hosts = _load_allowed_hosts()
 
 app.add_middleware(
-    TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "node-beta"]
+    TrustedHostMiddleware, allowed_hosts=allowed_hosts
 )
 
 app.add_middleware(

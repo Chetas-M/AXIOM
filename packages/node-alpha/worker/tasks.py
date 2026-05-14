@@ -26,6 +26,9 @@ POSTGRES_DSN = os.getenv("POSTGRES_DSN", "postgresql://user:pass@localhost:5432/
 engine = create_engine(POSTGRES_DSN)
 SessionLocal = sessionmaker(bind=engine)
 
+def _is_development_env() -> bool:
+    return os.getenv("AXIOM_ENV", "development").lower() == "development"
+
 def is_expired(enqueued_at: str, expiry_seconds: int) -> bool:
     try:
         dt = datetime.fromisoformat(str(enqueued_at).replace("Z", "+00:00"))
@@ -84,9 +87,30 @@ def infer_signals(payload: dict):
     
     logger.info(f"Inferring signals for {task.tickers} on {task.date}")
     
-    is_development = os.getenv("AXIOM_ENV", "development").lower() == "development"
+    is_development = _is_development_env()
     if not is_development:
         logger.error("Real model runners are not yet linked. Failing closed in production.")
+        session = SessionLocal()
+        try:
+            run_date = datetime.strptime(task.date, "%Y-%m-%d").date()
+            existing_sr = session.query(SignalRun).filter(SignalRun.date == run_date).first()
+            if existing_sr:
+                existing_sr.status = "SKIPPED_NO_MODELS"
+                existing_sr.reason = "Real model runners are not linked in production"
+            else:
+                session.add(
+                    SignalRun(
+                        date=run_date,
+                        status="SKIPPED_NO_MODELS",
+                        reason="Real model runners are not linked in production",
+                    )
+                )
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Failed to record skipped production inference run: {e}")
+        finally:
+            session.close()
         return
     
     session = SessionLocal()
