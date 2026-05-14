@@ -3,6 +3,7 @@ import logging
 from urllib.parse import urlparse
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from api.routers import ohlcv, news, signals, rag
 from api.auth import require_api_key
 
@@ -14,12 +15,15 @@ DEFAULT_CORS_ORIGINS = [
     "http://127.0.0.1:5173",
 ]
 
+is_development = os.getenv("AXIOM_ENV", "development").lower() == "development"
+
 app = FastAPI(
     title="AXIOM Internal API",
     description="Financial intelligence data layer for node-beta",
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if is_development else None,
+    redoc_url="/redoc" if is_development else None,
+    openapi_url="/openapi.json" if is_development else None,
 )
 
 def _load_allowed_origins() -> list[str]:
@@ -38,6 +42,10 @@ def _load_allowed_origins() -> list[str]:
     return origins or DEFAULT_CORS_ORIGINS
 
 allowed_origins = _load_allowed_origins()
+
+app.add_middleware(
+    TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "node-beta"]
+)
 
 app.add_middleware(
     CORSMiddleware,
