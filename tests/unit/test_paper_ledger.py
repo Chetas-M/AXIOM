@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import types
 import unittest
+from datetime import date
 from pathlib import Path
 
 
@@ -43,16 +44,27 @@ def load_paper_ledger():
     storage_models.PortfolioSnapshot = PortfolioSnapshot
     storage_models.SignalRun = SignalRun
 
+    missing = object()
+    module_names = ("sqlalchemy.orm", "yfinance", "storage.db", "storage.models")
+    original_modules = {name: sys.modules.get(name, missing) for name in module_names}
+
     sys.modules["sqlalchemy.orm"] = sqlalchemy_orm
     sys.modules["yfinance"] = yfinance_mod
     sys.modules["storage.db"] = storage_db
     sys.modules["storage.models"] = storage_models
 
-    spec = importlib.util.spec_from_file_location("test_paper_ledger_module", MODULE_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module, storage_models
+    try:
+        spec = importlib.util.spec_from_file_location("test_paper_ledger_module", MODULE_PATH)
+        module = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(module)
+        return module, storage_models
+    finally:
+        for name, original in original_modules.items():
+            if original is missing:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = original
 
 
 class FakeQuery:
@@ -96,7 +108,7 @@ class PaperLedgerTests(unittest.TestCase):
     def test_existing_snapshot_is_updated_instead_of_duplicated(self):
         module, models = load_paper_ledger()
 
-        existing_snapshot = models.PortfolioSnapshot(snapshot_date="today")
+        existing_snapshot = models.PortfolioSnapshot(snapshot_date=date.today())
         existing_snapshot.total_capital = 0.0
 
         class FakeSession:

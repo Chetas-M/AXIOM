@@ -43,8 +43,8 @@ def send_telegram(text: str):
         response = requests.post(url, json=payload, timeout=10)
         response.raise_for_status()
         logger.info("Telegram message sent successfully.")
-    except Exception as e:
-        logger.error(f"Failed to send Telegram message: {e}")
+    except Exception:
+        logger.exception("Failed to send Telegram message")
 
 
 def generate_brief(tickers: list[str]) -> str:
@@ -87,10 +87,7 @@ def generate_brief(tickers: list[str]) -> str:
 
 
 def run_morning_brief():
-    logger.info("Fetching signals...")
-    signals = fetch_signals()
-    tickers = list(signals.keys())
-    narration = generate_brief(tickers)
+    narration = generate_brief([])
     send_telegram(narration)
 
 

@@ -4,7 +4,7 @@ Shared authentication dependency for AXIOM internal API routes.
 How it works
 ------------
 * Every non-health route requires a valid API key passed via the
-  ``X-API-Key`` header (or the ``api_key`` query param as fallback).
+  ``X-API-Key`` header.
 * The expected key is loaded from the ``AXIOM_API_KEY`` env-var at
   startup.  If the env-var is missing the application will **refuse to
   start**, preventing accidental unauthenticated deployments.
@@ -18,8 +18,8 @@ import secrets
 import logging
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import APIKeyHeader, APIKeyQuery
+from fastapi import HTTPException, Security, status
+from fastapi.security import APIKeyHeader
 
 logger = logging.getLogger(__name__)
 
@@ -43,28 +43,22 @@ if not _API_KEY:
 # ---------------------------------------------------------------------------
 
 _header_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
-_query_scheme = APIKeyQuery(name="api_key", auto_error=False)
 
 
 async def require_api_key(
     header_key: Optional[str] = Security(_header_scheme),
-    query_key: Optional[str] = Security(_query_scheme),
 ) -> str:
     """Dependency that enforces a valid API key on every protected route.
-
-    Accepts the key from:
-      1. ``X-API-Key`` request header  (preferred)
-      2. ``?api_key=`` query parameter (convenience / dev tooling)
 
     Returns the validated key so downstream handlers can log caller
     identity if needed.
     """
-    provided = header_key or query_key
+    provided = header_key
 
     if not provided:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing API key – supply via X-API-Key header or api_key query param.",
+            detail="Missing API key – supply via X-API-Key header.",
         )
 
     # Constant-time comparison to prevent timing side-channels

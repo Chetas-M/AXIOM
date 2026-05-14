@@ -21,9 +21,9 @@ app = FastAPI(
     title="AXIOM Internal API",
     description="Financial intelligence data layer for node-beta",
     version="0.1.0",
-    docs_url="/docs" if is_development else None,
-    redoc_url="/redoc" if is_development else None,
-    openapi_url="/openapi.json" if is_development else None,
+    docs_url="/docs" if os.getenv("AXIOM_ENABLE_DOCS", "").lower() in {"1", "true", "yes"} else None,
+    redoc_url="/redoc" if os.getenv("AXIOM_ENABLE_DOCS", "").lower() in {"1", "true", "yes"} else None,
+    openapi_url="/openapi.json" if os.getenv("AXIOM_ENABLE_DOCS", "").lower() in {"1", "true", "yes"} else None,
 )
 
 def _load_allowed_origins() -> list[str]:
@@ -79,4 +79,6 @@ async def health():
 
 @app.get("/")
 async def root():
-    return {"message": "AXIOM API - see /docs for endpoints"}
+    if app.docs_url:
+        return {"message": "AXIOM API - see /docs for endpoints"}
+    return {"message": "AXIOM API"}
