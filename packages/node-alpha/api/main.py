@@ -1,9 +1,12 @@
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import random
 
 app = FastAPI(title="AXIOM Node Alpha API")
+
+is_development = os.getenv("AXIOM_ENV", "development").lower() == "development"
 
 class InferenceRequest(BaseModel):
     tickers: List[str]
@@ -16,12 +19,17 @@ class TickerSignal(BaseModel):
     xgb: float
     lstm: float
     prophet: float
+    is_mock: bool = False
 
 @app.post("/infer", response_model=Dict[str, TickerSignal])
 def run_inference(req: InferenceRequest):
     """
     Runs the ensemble and returns the predicted signals.
     """
+    if not is_development:
+        # Fail closed in production until real model runners are wired
+        raise HTTPException(status_code=501, detail="Real model runners are not yet linked to /infer.")
+
     response = {}
     for ticker in req.tickers:
         # Mocking the ML pipeline returns for paper trading validation
@@ -36,7 +44,8 @@ def run_inference(req: InferenceRequest):
             confidence=avg_conf,
             xgb=xgb_val,
             lstm=lstm_val,
-            prophet=prophet_val
+            prophet=prophet_val,
+            is_mock=True
         )
     return response
 
