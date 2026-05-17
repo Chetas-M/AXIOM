@@ -9,10 +9,16 @@ router = APIRouter(prefix="/ohlcv", tags=["OHLCV"])
 
 @router.get("/")
 async def get_ohlcv(
-    ticker: str = Query(..., description="NSE ticker e.g. RELIANCE"),
+    ticker: str = Query(
+        ...,
+        min_length=1,
+        max_length=20,
+        pattern=r"^[A-Za-z0-9&._-]+$",
+        description="NSE ticker e.g. RELIANCE",
+    ),
     from_date: Optional[date] = Query(None),
     to_date: Optional[date] = Query(None),
-    limit: int = Query(30, le=500),
+    limit: int = Query(30, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
 ):
     filters = "WHERE ticker = :ticker"
