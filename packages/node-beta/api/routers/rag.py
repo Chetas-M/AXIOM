@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 import time
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
@@ -6,15 +6,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from api.database import get_db
 from storage.models import NewsArticle
 import logging
+from api.routers._params import TickerPathParam
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/rag", tags=["RAG"])
 
 @router.get("/{ticker}")
 async def rag_query(
-    ticker: str = Path(..., min_length=1, max_length=20, pattern=r"^[A-Za-z0-9&._-]+$"),
+    ticker: TickerPathParam,
     top_k: int = Query(5, ge=1, le=50),
-    max_age_hours: int = Query(48, ge=1, le=336),
+    max_age_hours: int = Query(48, ge=1, le=720),
     db: AsyncSession = Depends(get_db),
 ):
     cutoff_timestamp = int(time.time()) - (max_age_hours * 3600)

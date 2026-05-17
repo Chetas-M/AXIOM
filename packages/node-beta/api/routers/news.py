@@ -1,30 +1,25 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from typing import Optional
 from api.database import get_db
+from api.routers._params import OptionalTickerQueryParam
 
 router = APIRouter(prefix="/news", tags=["News"])
 
 @router.get("/")
 async def get_news(
-    ticker: Optional[str] = Query(
-        None,
-        min_length=1,
-        max_length=20,
-        pattern=r"^[A-Za-z0-9&._-]+$",
-        description="Filter by ticker (optional)",
-    ),
-    source: Optional[str] = Query(None),
+    ticker: OptionalTickerQueryParam,
+    source: str | None = Query(None),
     limit: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ):
     filters = "WHERE 1=1"
     params = {}
 
+    ticker = ticker.upper() if ticker else None
     if ticker:
         filters += " AND ticker = :ticker"
-        params["ticker"] = ticker.upper()
+        params["ticker"] = ticker
     if source:
         filters += " AND source ILIKE :source"
         params["source"] = f"%{source}%"

@@ -18,6 +18,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 PrivateDevices=true
 ProtectSystem=strict
+ProtectHome=read-only
 ProtectControlGroups=true
 ProtectKernelModules=true
 ProtectKernelTunables=true
@@ -31,7 +32,6 @@ SystemCallFilter=@system-service
 LogsDirectory=axiom
 StateDirectory=axiom
 RuntimeDirectory=axiom
-ReadWritePaths=/var/log/axiom /var/lib/axiom /run/axiom
 
 [Install]
 WantedBy=multi-user.target
