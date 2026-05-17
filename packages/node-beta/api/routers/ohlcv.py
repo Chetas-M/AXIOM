@@ -4,15 +4,16 @@ from sqlalchemy import text
 from datetime import date
 from typing import Optional
 from api.database import get_db
+from api.routers._params import TickerQueryParam
 
 router = APIRouter(prefix="/ohlcv", tags=["OHLCV"])
 
 @router.get("/")
 async def get_ohlcv(
-    ticker: str = Query(..., description="NSE ticker e.g. RELIANCE"),
+    ticker: TickerQueryParam,
     from_date: Optional[date] = Query(None),
     to_date: Optional[date] = Query(None),
-    limit: int = Query(30, le=500),
+    limit: int = Query(30, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
 ):
     filters = "WHERE ticker = :ticker"

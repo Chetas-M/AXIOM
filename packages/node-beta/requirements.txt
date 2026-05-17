@@ -1,19 +1,20 @@
-requests
-beautifulsoup4
-psycopg2-binary
-sqlalchemy
-alembic
-apscheduler
-qdrant-client
+--constraint constraints.txt
+requests==2.32.3
+beautifulsoup4==4.12.3
+psycopg2-binary==2.9.10
+sqlalchemy==2.0.36
+alembic==1.13.3
+apscheduler==3.10.4
+qdrant-client==1.12.1
 -e ../shared
-yfinance>=0.2.43
-pandas
-feedparser
+yfinance==0.2.43
+pandas==2.2.3
+feedparser==6.0.11
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 sqlalchemy[asyncio]==2.0.36
-asyncpg
-python-dotenv
-httpx
-celery
-redis
+asyncpg==0.30.0
+python-dotenv==1.0.1
+httpx==0.27.2
+celery==5.4.0
+redis==5.2.0

@@ -1,16 +1,37 @@
 [Unit]
 Description=AXIOM Node Beta API (FastAPI)
 After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 User=chetas
 Group=chetas
 WorkingDirectory=/home/chetas/axiom/packages/node-beta
 Environment="PATH=/home/chetas/axiom/packages/node-beta/.venv/bin"
+Environment="PYTHONDONTWRITEBYTECODE=1"
 EnvironmentFile=/home/chetas/axiom/.env
 ExecStart=/home/chetas/axiom/packages/node-beta/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000
 Restart=always
 RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectClock=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+LogsDirectory=axiom
+StateDirectory=axiom
+RuntimeDirectory=axiom
 
 [Install]
 WantedBy=multi-user.target
