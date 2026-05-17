@@ -1,9 +1,12 @@
 [Unit]
 Description=Axiom Gamma Telegram Bot
 After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 User=chetas
+Group=chetas
 WorkingDirectory=/home/chetas/axiom/packages/node-gamma
 
 # Secrets loaded from a root-owned env-file (never commit this file)
@@ -15,11 +18,30 @@ EnvironmentFile=/etc/axiom/gamma.env
 
 # Ensure Python can find the adjacent packages if needed
 Environment="PYTHONPATH=/home/chetas/axiom/packages"
+Environment="PYTHONDONTWRITEBYTECODE=1"
 
 ExecStart=/home/chetas/axiom/packages/node-gamma/.venv/bin/python bot/main.py
 
 Restart=always
 RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectClock=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+LogsDirectory=axiom
+StateDirectory=axiom
+RuntimeDirectory=axiom
+ReadWritePaths=/var/log/axiom /var/lib/axiom /run/axiom
 
 [Install]
 WantedBy=multi-user.target
